@@ -1,21 +1,28 @@
-import { useSession, signIn, signOut } from "next-auth/react";
-import Layout from "@/components/Layout.js";
+import Header from "@/components/Header";
+import Featured from "@/components/Featured";
+import {Product} from "@/models/Product";
+import {mongooseConnect} from "@/lib/mongoose";
+import NewProducts from "@/components/NewProducts";
 
-export default function Home() {
-   const { data: session } = useSession();
-   if (!session) {
-      return;
-   }
-   return (
-      <Layout>
-         <div className="text-blue-900 flex justify-between">
-            <h2>Hello, <b>{session?.user?.name}</b></h2>
+export default function HomePage({featuredProduct,newProducts}) {
+  return (
+    <div>
+      <Header />
+      <Featured product={featuredProduct} />
+      <NewProducts products={newProducts} />
+    </div>
+  );
+}
 
-            <div className="flex bg-gray-300 text-black gap-1 rounded-lg overflow-hidden">
-               <img src={session?.user?.image} className="w-6 h-6" />
-               <span className="px-2">{session.user.name}</span>
-            </div>
-         </div>
-      </Layout>
-   );
+export async function getServerSideProps() {
+  const featuredProductId = '65c1cb7e73b2533284c3f525';
+  await mongooseConnect();
+  const featuredProduct = await Product.findById(featuredProductId);
+  const newProducts = await Product.find({}, null, {sort: {'_id':-1}, limit:10});
+  return {
+    props: {
+      featuredProduct: JSON.parse(JSON.stringify(featuredProduct)),
+      newProducts: JSON.parse(JSON.stringify(newProducts)),
+    },
+  };
 }
